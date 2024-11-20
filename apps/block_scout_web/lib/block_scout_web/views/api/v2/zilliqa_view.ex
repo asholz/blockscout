@@ -7,7 +7,7 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
 
     alias Explorer.Chain.Block
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
-    alias Explorer.Chain.{Block, Transaction}
+    alias Explorer.Chain.{Address, Block, Transaction}
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,
@@ -51,6 +51,37 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
         is_scilla: scilla_transaction?(transaction)
       })
     end
+
+    @doc """
+    Extends the JSON output with a sub-map containing information related to
+    Zilliqa, such as if the address is a Scilla smart contract.
+
+    ## Parameters
+    - `out_json`: A map defining the output JSON which will be extended.
+    - `address`: The address structure.
+
+    ## Returns
+    - A map extended with data related to Zilliqa.
+    """
+    @spec extend_address_json_response(map(), Address.t()) :: map()
+    def extend_address_json_response(out_json, %Address{} = address) do
+      is_scilla_contract =
+        case address do
+          %Address{
+            contracts_creation_transaction: transaction
+          } ->
+            scilla_transaction?(transaction)
+
+          _ ->
+            false
+        end
+
+      Map.put(out_json, :zilliqa, %{
+        is_scilla_contract: is_scilla_contract
+      })
+    end
+
+    def extend_address_json_response(out_json, _address), do: out_json
 
     @spec add_quorum_certificate(map(), Block.t()) :: map()
     defp add_quorum_certificate(
